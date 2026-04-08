@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>쓱첵 : 관리자 대시보드</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="max-w-4xl mx-auto min-h-screen flex flex-col">
+    <header class="py-6 px-4 border-b-2 border-gray-200 text-center">
+      <h1 class="text-4xl font-extrabold text-gray-900">쓱첵 관리자</h1>
+      <p class="text-xl text-gray-500 mt-2">행사 생성 및 출석 관리</p>
+    </header>
+
+    <nav class="flex border-b-2 border-gray-200">
+      <button id="tab-create" class="flex-1 py-4 text-xl font-semibold text-blue-600 border-b-4 border-blue-600">행사 생성</button>
+      <button id="tab-dashboard" class="flex-1 py-4 text-xl font-semibold text-gray-500 hover:text-gray-700">행사 관리</button>
+    </nav>
+
+    <main class="flex-1 p-6">
+      
+      <section id="content-create">
+        <form id="create-event-form">
+          <div class="input-row">
+            <label for="eventName" class="input-label">행사명</label>
+            <input type="text" id="eventName" class="form-input" placeholder="예: 00년 신규 지방공무원 직무연수" required>
+          </div>
+
+          <div class="input-row">
+            <label for="location" class="input-label">행사 장소</label>
+            <input type="text" id="location" class="form-input" placeholder="예: 이산홀" required>
+          </div>
+
+          <div class="input-row">
+            <label for="eventType" class="input-label">참석자 확정 여부 (DB: event_type)</label>
+            <select id="eventType" class="form-select" required>
+              <option value="">선택해주세요.</option>
+              <option value="미확정">참석자 미확정(현장 등록)</option>
+              <option value="확정">참석자 확정(명단 사전 등록)</option>
+            </select>
+          </div>
+
+          <div class="input-row mt-10">
+            <button type="submit" id="btn-create-submit" class="btn btn-primary">새 행사 생성하기</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="content-dashboard" class="hidden">
+        <div class="input-row">
+          <label class="input-label">관리할 행사 선택 (DB: Events 테이블 조회)</label>
+          <select id="dashboard-event-select" class="form-select">
+            <option value="">불러오는 중...</option>
+          </select>
+        </div>
+        </section>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
