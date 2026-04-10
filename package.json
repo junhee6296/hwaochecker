@@ -1,0 +1,27 @@
+{
+  "name": "hwaochecker",
+  "version": "1.0.0",
+  "description": "화성오산교육지원청 회의 출석체크 시스템 및 점심식사 QR리스트",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/junhee6296/hwaochecker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/junhee6296/hwaochecker/issues"
+  },
+  "homepage": "https://github.com/junhee6296/hwaochecker#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.1",
+    "express": "^5.2.1"
+  }
+}

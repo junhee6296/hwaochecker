@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>쓱첵 : QR 코드 발급</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link rel="stylesheet" href="CSS/style.css">
+</head>
+<body class="bg-gray-50">
+  <div class="max-w-4xl mx-auto min-h-screen flex flex-col bg-white shadow-xl">
+    <header class="py-6 px-4 border-b-2 border-gray-200 text-center relative">
+      <h1 class="text-4xl font-extrabold text-gray-900">쓱첵 QR 발급</h1>
+      <p class="text-xl text-gray-500 mt-2">출석 확인용 QR 코드 생성기</p>
+      <a href="/admin.html" class="absolute top-6 right-6 text-sm font-semibold text-gray-400 hover:text-blue-600">관리자 접속</a>
+    </header>
+
+    <main class="flex-1 p-6 flex flex-col items-center justify-center">
+      <div id="qr-form-container" class="w-full max-w-md p-6 rounded-2xl border border-gray-200 shadow-sm bg-white">
+        <div class="input-row"><label for="eventSelect" class="input-label">진행 중인 행사 선택</label><select id="eventSelect" class="form-select"><option value="">불러오는 중...</option></select></div>
+        <div class="input-row"><label for="orgType" class="input-label">1차 분류</label>
+          <select id="orgType" class="form-select"><option value="">선택</option><option value="기관">교육지원청/직속기관</option><option value="학교">학교</option></select>
+        </div>
+        <div class="input-row"><label for="orgName" class="input-label">2차 분류 (기관/학교명)</label><input type="text" id="orgName" class="form-input"></div>
+        <div class="input-row"><label for="orgRole" class="input-label">부서 / 직위</label><input type="text" id="orgRole" class="form-input"></div>
+        <div class="input-row"><label for="userName" class="input-label">이름</label><input type="text" id="userName" class="form-input"></div>
+        <div class="flex gap-4 mt-8">
+          <button id="btn-generate-qr" class="btn btn-primary flex-1">QR 신규 발급</button>
+          <button id="btn-reissue-qr" class="btn btn-secondary flex-1">기등록자 재발급</button>
+        </div>
+      </div>
+
+      <div id="qrcode-container" class="mt-10 p-8 bg-white rounded-xl shadow-lg border border-gray-200 hidden flex flex-col items-center">
+        <h3 id="qr-result-name" class="text-2xl font-bold mb-2 text-blue-600"></h3>
+        
+        <div id="qr-timer-box" class="mb-4 text-center">
+          <p class="text-gray-500 text-sm mb-1">남은 시간</p>
+          <p id="qr-timer-text" class="text-4xl font-mono font-bold text-red-500">03:00</p>
+        </div>
+
+        <div id="qrcode" class="p-4 bg-white border-4 border-gray-100 rounded-xl"></div>
+        
+        <div id="qr-expired-msg" class="hidden text-center mt-4">
+          <p class="text-red-600 font-bold text-lg">QR 코드가 만료되었습니다.</p>
+          <button id="btn-reissue-expired" class="btn btn-secondary mt-2 px-6">다시 발급받기</button>
+        </div>
+
+        <p class="text-center text-gray-500 mt-6 font-semibold">스캔하여 출석체크</p>
+        <button id="btn-reset" class="mt-6 text-gray-400 underline hover:text-gray-700">처음으로 (다른 사람 발급)</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const API_BASE_URL = '/api';
+    let qrTimerInterval;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 폼 데이터 준비 (기존 로직 동일)
+      const eventSelect = document.getElementById('eventSelect');
+      try {
+        const response = await fetch(`${API_BASE_URL}/events`);
+        const events = await response.json();
+        eventSelect.innerHTML = '<option value="">행사를 선택해주세요.</option>';
+        events.forEach(e => {
+          if (new Date() <= new Date(e.endTime)) {
+            const opt = document.createElement('option'); opt.value = e.id; opt.textContent = e.name; eventSelect.appendChild(opt);
+          }
+        });
+      } catch (e) {}
+
+      function getPayload() {
+        return {
+          eventId: eventSelect.value, orgType: document.getElementById('orgType').value,
+          orgName: document.getElementById('orgName').value.trim(), orgRole: document.getElementById('orgRole').value.trim(),
+          name: document.getElementById('userName').value.trim()
+        };
+      }
+
+      function startQRTimer(expiresAt) {
+        clearInterval(qrTimerInterval);
+        const timerText = document.getElementById('qr-timer-text');
+        const qrDiv = document.getElementById('qrcode');
+        const expiredMsg = document.getElementById('qr-expired-msg');
+        
+        qrDiv.classList.remove('hidden');
+        expiredMsg.classList.add('hidden');
+        timerText.classList.remove('text-gray-400');
+
+        qrTimerInterval = setInterval(() => {
+          const timeLeft = expiresAt - Date.now();
+          if (timeLeft <= 0) {
+            clearInterval(qrTimerInterval);
+            timerText.textContent = "00:00";
+            timerText.classList.add('text-gray-400');
+            qrDiv.classList.add('hidden'); // QR 숨김
+            expiredMsg.classList.remove('hidden'); // 재발급 버튼 표시
+          } else {
+            const m = Math.floor(timeLeft / 60000);
+            const s = Math.floor((timeLeft % 60000) / 1000);
+            timerText.textContent = `0${m}:${s < 10 ? '0' : ''}${s}`;
+          }
+        }, 1000);
+      }
+
+      function drawQR(data, name, expiresAt) {
+        document.getElementById('qr-form-container').classList.add('hidden');
+        document.getElementById('qrcode-container').classList.remove('hidden');
+        document.getElementById('qr-result-name').textContent = `${name}님의 출석 QR`;
+        document.getElementById('qrcode').innerHTML = '';
+        new QRCode(document.getElementById('qrcode'), { text: data, width: 250, height: 250, colorDark: "#111827" });
+        startQRTimer(expiresAt);
+      }
+
+      async function handleQRRequest(endpoint) {
+        const payload = getPayload(); if(!payload.eventId || !payload.name) return alert('모든 항목을 입력하세요.');
+        const res = await fetch(`${API_BASE_URL}${endpoint}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+        const data = await res.json();
+        if (res.ok) drawQR(data.qrData, payload.name, data.expiresAt); else alert(data.message);
+      }
+
+      document.getElementById('btn-generate-qr').addEventListener('click', () => handleQRRequest('/qr/generate'));
+      document.getElementById('btn-reissue-qr').addEventListener('click', () => handleQRRequest('/qr/reissue'));
+      document.getElementById('btn-reissue-expired').addEventListener('click', () => handleQRRequest('/qr/reissue'));
+      document.getElementById('btn-reset').addEventListener('click', () => location.reload());
+    });
+  </script>
+</body>
+</html>

@@ -5,61 +5,103 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>쓱첵 : 관리자 대시보드</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <link rel="stylesheet" href="CSS/style.css">
 </head>
 <body>
-  <div class="max-w-4xl mx-auto min-h-screen flex flex-col">
-    <header class="py-6 px-4 border-b-2 border-gray-200 text-center">
-      <h1 class="text-4xl font-extrabold text-gray-900">쓱첵 관리자</h1>
-      <p class="text-xl text-gray-500 mt-2">행사 생성 및 출석 관리</p>
-    </header>
+  
+  <div id="login-section" class="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+    <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+      <h2 class="text-3xl font-extrabold text-center mb-2">관리자 로그인</h2>
+      
+      <div id="step-email">
+        <input type="email" id="adminEmail" class="form-input mb-4" placeholder="관리자 이메일 주소">
+        <button id="btn-request-code" class="btn btn-primary">인증번호 요청</button>
+      </div>
 
-    <nav class="flex border-b-2 border-gray-200">
-      <button id="tab-create" class="flex-1 py-4 text-xl font-semibold text-blue-600 border-b-4 border-blue-600">행사 생성</button>
-      <button id="tab-dashboard" class="flex-1 py-4 text-xl font-semibold text-gray-500 hover:text-gray-700">행사 관리</button>
+      <div id="step-code" class="hidden mt-4">
+        <div class="flex justify-between items-center mb-2">
+          <p class="text-sm text-green-600">인증번호가 전송되었습니다.</p>
+          <p id="auth-timer" class="text-red-500 font-bold font-mono text-lg">03:00</p>
+        </div>
+        <input type="text" id="adminCode" class="form-input mb-4" placeholder="6자리 인증번호">
+        <button id="btn-verify-code" class="btn btn-primary">인증 확인</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="dashboard-section" class="max-w-5xl mx-auto min-h-screen flex flex-col hidden bg-white shadow-xl">
+    <nav class="flex border-b-2 border-gray-200 bg-white">
+      <button id="tab-create" class="flex-1 py-4 text-xl font-semibold text-gray-500 hover:text-gray-700 border-b-4 border-transparent">행사 생성</button>
+      <button id="tab-dashboard" class="flex-1 py-4 text-xl font-semibold text-blue-600 border-b-4 border-blue-600">행사 관리</button>
+      <a href="/" class="flex-1 py-4 text-xl font-semibold text-gray-500 hover:text-gray-900 bg-gray-50 text-center border-l-2">QR 발급 ➡️</a>
     </nav>
 
-    <main class="flex-1 p-6">
-      
-      <section id="content-create">
+    <main class="flex-1 p-6 bg-white">
+      <section id="content-create" class="hidden">
         <form id="create-event-form">
-          <div class="input-row">
-            <label for="eventName" class="input-label">행사명</label>
-            <input type="text" id="eventName" class="form-input" placeholder="예: 00년 신규 지방공무원 직무연수" required>
+          <div class="input-row"><label class="input-label">행사명</label><input type="text" id="eventName" class="form-input" required></div>
+          <div class="input-row"><label class="input-label">행사 장소</label><input type="text" id="location" class="form-input" required></div>
+          <div class="input-row"><label class="input-label">참석자 확정 여부</label>
+            <select id="eventType" class="form-select" required><option value="미확정">현장 등록</option></select>
           </div>
-
-          <div class="input-row">
-            <label for="location" class="input-label">행사 장소</label>
-            <input type="text" id="location" class="form-input" placeholder="예: 이산홀" required>
-          </div>
-
-          <div class="input-row">
-            <label for="eventType" class="input-label">참석자 확정 여부 (DB: event_type)</label>
-            <select id="eventType" class="form-select" required>
-              <option value="">선택해주세요.</option>
-              <option value="미확정">참석자 미확정(현장 등록)</option>
-              <option value="확정">참석자 확정(명단 사전 등록)</option>
-            </select>
-          </div>
-
-          <div class="input-row mt-10">
-            <button type="submit" id="btn-create-submit" class="btn btn-primary">새 행사 생성하기</button>
-          </div>
+          <div class="input-row"><label class="input-label">QR 발급 시작</label><input type="datetime-local" id="qrStartTime" class="form-input" required></div>
+          <div class="input-row"><label class="input-label">행사 마감</label><input type="datetime-local" id="endTime" class="form-input" required></div>
+          <button type="submit" class="btn btn-primary mt-4">새 행사 생성</button>
         </form>
       </section>
 
-      <section id="content-dashboard" class="hidden">
+      <section id="content-dashboard">
         <div class="input-row">
-          <label class="input-label">관리할 행사 선택 (DB: Events 테이블 조회)</label>
-          <select id="dashboard-event-select" class="form-select">
-            <option value="">불러오는 중...</option>
-          </select>
+          <label class="input-label">관리할 행사 선택</label>
+          <select id="dashboard-event-select" class="form-select"><option value="">불러오는 중...</option></select>
         </div>
-        </section>
+
+        <div id="event-management-board" class="hidden">
+          
+          <div id="scanner-area" class="mt-4 p-8 border-4 border-dashed border-blue-300 bg-blue-50 rounded-2xl text-center cursor-pointer hover:bg-blue-100 transition focus:outline-none focus:ring-4 focus:ring-blue-200" tabindex="0">
+            <h3 class="text-2xl font-extrabold text-blue-700 mb-2">📸 QR 캡쳐 스캐너 (임시)</h3>
+            <p class="text-gray-600 text-lg">이 박스를 클릭한 상태에서, <strong>복사한 QR코드 이미지를 붙여넣기(Ctrl+V)</strong> 하세요.</p>
+            <p id="scan-result" class="mt-4 text-xl font-bold"></p>
+          </div>
+
+          <div class="mt-10">
+            <div class="flex justify-between items-end mb-4">
+              <h3 class="text-2xl font-bold text-gray-900">참석자 명단</h3>
+              <p id="attendance-stats" class="text-lg font-bold text-blue-600">총 발급: 0명 / 실제 참석: 0명</p>
+            </div>
+            
+            <div class="overflow-hidden border border-gray-200 rounded-xl">
+              <table class="w-full text-left bg-white">
+                <thead class="bg-gray-50 border-b border-gray-200 text-gray-700 text-lg">
+                  <tr>
+                    <th class="p-4">소속</th>
+                    <th class="p-4">부서/직위</th>
+                    <th class="p-4">이름</th>
+                    <th class="p-4 text-center">출석 여부</th>
+                  </tr>
+                </thead>
+                <tbody id="attendee-table-body" class="divide-y divide-gray-100 text-lg">
+                  </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <div id="delete-section" class="mt-16 p-6 border border-red-200 bg-red-50 rounded-xl">
+            <h3 class="text-xl font-bold text-red-600 mb-2">위험 구역 : 행사 삭제</h3>
+            <button id="btn-req-delete-code" class="btn btn-danger mb-4">삭제용 인증번호 메일 발송</button>
+            <div id="delete-auth-box" class="hidden">
+              <input type="text" id="deleteCode" class="form-input mb-4" placeholder="인증번호">
+              <button id="btn-confirm-delete" class="btn btn-danger">최종 삭제 (복구 불가)</button>
+            </div>
+          </div>
+
+        </div>
+      </section>
 
     </main>
   </div>
 
-  <script src="app.js"></script>
+  <script type="module" src="JS/app.js"></script>
 </body>
 </html>
