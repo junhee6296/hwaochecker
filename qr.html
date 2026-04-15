@@ -18,13 +18,24 @@
 
     <main class="flex-1 p-6 flex flex-col items-center justify-center">
       <div id="qr-form-container" class="w-full max-w-md p-6 rounded-2xl border border-gray-200 shadow-sm bg-white">
+        
         <div class="input-row"><label for="eventSelect" class="input-label">진행 중인 행사 선택</label><select id="eventSelect" class="form-select"><option value="">불러오는 중...</option></select></div>
-        <div class="input-row"><label for="orgType" class="input-label">1차 분류</label>
-          <select id="orgType" class="form-select"><option value="">선택</option><option value="기관">교육지원청/직속기관</option><option value="학교">학교</option></select>
+        
+        <div class="input-row">
+          <label for="orgType" class="input-label">1차 분류</label>
+          <select id="orgType" class="form-select">
+            <option value="">소속을 선택해주세요.</option>
+            <option value="기관">교육지원청 및 직속기관</option>
+            <option value="학교">학교</option>
+          </select>
         </div>
-        <div class="input-row"><label for="orgName" class="input-label">2차 분류 (기관/학교명)</label><input type="text" id="orgName" class="form-input"></div>
-        <div class="input-row"><label for="orgRole" class="input-label">부서 / 직위</label><input type="text" id="orgRole" class="form-input"></div>
-        <div class="input-row"><label for="userName" class="input-label">이름</label><input type="text" id="userName" class="form-input"></div>
+
+        <div class="input-row"><label for="orgName" class="input-label">2차 분류 (기관/학교명)</label><input type="text" id="orgName" class="form-input" placeholder="예: 화성오산교육지원청 / 00초등학교"></div>
+        
+        <div class="input-row"><label for="orgRole" class="input-label">부서 / 직위</label><input type="text" id="orgRole" class="form-input" placeholder="예: 행정과 / 주무관 또는 교사"></div>
+        
+        <div class="input-row"><label for="userName" class="input-label">이름</label><input type="text" id="userName" class="form-input" placeholder="예: 홍길동"></div>
+        
         <div class="flex gap-4 mt-8">
           <button id="btn-generate-qr" class="btn btn-primary flex-1">QR 신규 발급</button>
           <button id="btn-reissue-qr" class="btn btn-secondary flex-1">기등록자 재발급</button>
@@ -33,19 +44,9 @@
 
       <div id="qrcode-container" class="mt-10 p-8 bg-white rounded-xl shadow-lg border border-gray-200 hidden flex flex-col items-center">
         <h3 id="qr-result-name" class="text-2xl font-bold mb-2 text-blue-600"></h3>
-        
-        <div id="qr-timer-box" class="mb-4 text-center">
-          <p class="text-gray-500 text-sm mb-1">남은 시간</p>
-          <p id="qr-timer-text" class="text-4xl font-mono font-bold text-red-500">03:00</p>
-        </div>
-
+        <div id="qr-timer-box" class="mb-4 text-center"><p class="text-gray-500 text-sm mb-1">남은 시간</p><p id="qr-timer-text" class="text-4xl font-mono font-bold text-red-500">03:00</p></div>
         <div id="qrcode" class="p-4 bg-white border-4 border-gray-100 rounded-xl"></div>
-        
-        <div id="qr-expired-msg" class="hidden text-center mt-4">
-          <p class="text-red-600 font-bold text-lg">QR 코드가 만료되었습니다.</p>
-          <button id="btn-reissue-expired" class="btn btn-secondary mt-2 px-6">다시 발급받기</button>
-        </div>
-
+        <div id="qr-expired-msg" class="hidden text-center mt-4"><p class="text-red-600 font-bold text-lg">QR 코드가 만료되었습니다.</p><button id="btn-reissue-expired" class="btn btn-secondary mt-2 px-6">다시 발급받기</button></div>
         <p class="text-center text-gray-500 mt-6 font-semibold">스캔하여 출석체크</p>
         <button id="btn-reset" class="mt-6 text-gray-400 underline hover:text-gray-700">처음으로 (다른 사람 발급)</button>
       </div>
@@ -57,7 +58,6 @@
     let qrTimerInterval;
 
     document.addEventListener('DOMContentLoaded', async () => {
-      // 폼 데이터 준비 (기존 로직 동일)
       const eventSelect = document.getElementById('eventSelect');
       try {
         const response = await fetch(`${API_BASE_URL}/events`);
@@ -94,8 +94,8 @@
             clearInterval(qrTimerInterval);
             timerText.textContent = "00:00";
             timerText.classList.add('text-gray-400');
-            qrDiv.classList.add('hidden'); // QR 숨김
-            expiredMsg.classList.remove('hidden'); // 재발급 버튼 표시
+            qrDiv.classList.add('hidden');
+            expiredMsg.classList.remove('hidden'); 
           } else {
             const m = Math.floor(timeLeft / 60000);
             const s = Math.floor((timeLeft % 60000) / 1000);

@@ -1,0 +1,53 @@
+{
+  "events": [
+    {
+      "id": 3,
+      "name": "ㅇ",
+      "location": "ㅇ",
+      "eventType": "미확정",
+      "qrStartTime": "2026-04-14T15:38",
+      "endTime": "2026-04-14T15:41"
+    },
+    {
+      "id": 4,
+      "name": "2026 테스트 연수",
+      "location": "이산홀",
+      "eventType": "미확정",
+      "qrStartTime": "2026-04-14T16:13",
+      "endTime": "2026-04-14T16:20"
+    },
+    {
+      "id": 5,
+      "name": "테스트",
+      "location": "테스트",
+      "eventType": "미확정",
+      "qrStartTime": "2026-04-14T16:59",
+      "endTime": "2026-04-14T17:59"
+    }
+  ],
+  "attendees": [
+    {
+      "eventId": 4,
+      "orgType": "기관",
+      "orgName": "화성오산교육지원청",
+      "orgRole": "기획경영과",
+      "name": "ㅇㅇㅇ",
+      "qrToken": "dnem6c4h7rw",
+      "tokenExpiresAt": 1776150985382,
+      "attended": true,
+      "scannedAt": "2026-04-14T07:15:15.239Z"
+    },
+    {
+      "eventId": 5,
+      "orgType": "기관",
+      "orgName": "화성오산교육지원청",
+      "orgRole": "기획경영과",
+      "name": "DDD",
+      "qrToken": "km3nhszkfqm",
+      "tokenExpiresAt": 1776155828018,
+      "attended": true,
+      "scannedAt": "2026-04-14T08:34:34.737Z"
+    }
+  ],
+  "nextEventId": 6
+}

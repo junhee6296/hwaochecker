@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>쓱첵 : 관리자 대시보드</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
   <link rel="stylesheet" href="CSS/style.css">
 </head>
 <body>
@@ -38,6 +41,7 @@
     </nav>
 
     <main class="flex-1 p-6 bg-white">
+      
       <section id="content-create" class="hidden">
         <form id="create-event-form">
           <div class="input-row"><label class="input-label">행사명</label><input type="text" id="eventName" class="form-input" required></div>
@@ -59,41 +63,99 @@
 
         <div id="event-management-board" class="hidden">
           
-          <div id="scanner-area" class="mt-4 p-8 border-4 border-dashed border-blue-300 bg-blue-50 rounded-2xl text-center cursor-pointer hover:bg-blue-100 transition focus:outline-none focus:ring-4 focus:ring-blue-200" tabindex="0">
-            <h3 class="text-2xl font-extrabold text-blue-700 mb-2">📸 QR 캡쳐 스캐너 (임시)</h3>
-            <p class="text-gray-600 text-lg">이 박스를 클릭한 상태에서, <strong>복사한 QR코드 이미지를 붙여넣기(Ctrl+V)</strong> 하세요.</p>
-            <p id="scan-result" class="mt-4 text-xl font-bold"></p>
+          <div class="mt-4 p-6 border-2 border-gray-100 bg-gray-50 rounded-2xl shadow-sm">
+            
+            <div class="flex flex-col sm:flex-row justify-center gap-4 mb-6">
+              <button id="btn-mode-camera" class="flex-1 py-3 px-4 bg-blue-600 text-white font-bold rounded-xl shadow hover:bg-blue-700 transition">
+                📷 실시간 카메라 스캔
+              </button>
+              <button id="btn-mode-upload" class="flex-1 py-3 px-4 bg-white text-gray-700 border-2 border-gray-300 font-bold rounded-xl shadow hover:bg-gray-50 transition">
+                📁 이미지 파일 업로드
+              </button>
+            </div>
+
+            <div id="camera-container" class="w-full max-w-md mx-auto">
+              <div class="bg-white p-4 border border-gray-200 rounded-t-lg flex flex-col gap-3">
+                <select id="camera-select" class="form-select w-full text-sm">
+                  <option value="">카메라를 불러오는 중...</option>
+                </select>
+                <div class="flex gap-2">
+                  <button id="btn-start-camera" class="flex-1 bg-green-600 text-white font-bold py-2 rounded shadow hover:bg-green-700">▶️ 스캔 시작</button>
+                  <button id="btn-stop-camera" class="flex-1 bg-red-500 text-white font-bold py-2 rounded shadow hover:bg-red-600 hidden">⏹️ 스캔 정지</button>
+                </div>
+              </div>
+              <div id="reader" class="w-full overflow-hidden border-x border-b border-gray-200 rounded-b-lg bg-black min-h-[250px]"></div>
+            </div>
+
+            <div id="upload-container" class="hidden w-full max-w-md mx-auto p-8 border-4 border-dashed border-gray-300 bg-white rounded-2xl text-center">
+              <h3 class="text-xl font-extrabold text-gray-700 mb-4">저장된 QR 이미지 스캔</h3>
+              <input type="file" id="qr-file-input" accept="image/*" class="hidden">
+              <label for="qr-file-input" class="inline-block py-3 px-8 bg-indigo-600 text-white font-bold rounded-xl shadow cursor-pointer hover:bg-indigo-700 transition">
+                이미지 파일 선택하기
+              </label>
+              <p class="text-gray-500 mt-4 text-sm">기기에 저장된 QR 이미지를 선택하세요.</p>
+            </div>
+
+            <div class="mt-6 flex justify-center">
+              <p id="scan-result" class="text-xl font-bold px-4 py-2 rounded-lg bg-white border border-gray-200 shadow-sm h-12 flex items-center min-w-[300px] justify-center text-gray-400">대기 중...</p>
+            </div>
           </div>
 
           <div class="mt-10">
-            <div class="flex justify-between items-end mb-4">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 gap-4">
               <h3 class="text-2xl font-bold text-gray-900">참석자 명단</h3>
-              <p id="attendance-stats" class="text-lg font-bold text-blue-600">총 발급: 0명 / 실제 참석: 0명</p>
+              <div class="flex items-center gap-4 w-full md:w-auto">
+                <p id="attendance-stats" class="text-base md:text-lg font-bold text-blue-600">총 0명 / 참석 0명</p>
+                <button id="btn-export-excel" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow transition flex items-center gap-2 text-sm ml-auto">
+                  <span>📊 엑셀 다운로드</span>
+                </button>
+              </div>
             </div>
             
-            <div class="overflow-hidden border border-gray-200 rounded-xl">
-              <table class="w-full text-left bg-white">
-                <thead class="bg-gray-50 border-b border-gray-200 text-gray-700 text-lg">
-                  <tr>
-                    <th class="p-4">소속</th>
-                    <th class="p-4">부서/직위</th>
-                    <th class="p-4">이름</th>
-                    <th class="p-4 text-center">출석 여부</th>
-                  </tr>
+            <div class="overflow-x-auto border border-gray-200 rounded-xl">
+              <table class="min-w-full text-left bg-white whitespace-nowrap">
+                <thead class="bg-gray-50 border-b border-gray-200 text-gray-700">
+                  <tr><th class="p-4">소속</th><th class="p-4">부서/직위</th><th class="p-4">이름</th><th class="p-4 text-center">출석 여부</th></tr>
                 </thead>
-                <tbody id="attendee-table-body" class="divide-y divide-gray-100 text-lg">
-                  </tbody>
+                <tbody id="attendee-table-body" class="divide-y divide-gray-100"></tbody>
               </table>
             </div>
           </div>
           
-          <div id="delete-section" class="mt-16 p-6 border border-red-200 bg-red-50 rounded-xl">
-            <h3 class="text-xl font-bold text-red-600 mb-2">위험 구역 : 행사 삭제</h3>
-            <button id="btn-req-delete-code" class="btn btn-danger mb-4">삭제용 인증번호 메일 발송</button>
-            <div id="delete-auth-box" class="hidden">
-              <input type="text" id="deleteCode" class="form-input mb-4" placeholder="인증번호">
-              <button id="btn-confirm-delete" class="btn btn-danger">최종 삭제 (복구 불가)</button>
+          <div id="admin-actions-container" class="mt-16 space-y-6">
+            
+            <div id="edit-time-section" class="p-6 border border-orange-200 bg-orange-50 rounded-xl">
+              <h3 class="text-xl font-bold text-orange-600 mb-2">시간 관리 : 행사 마감시간 변경</h3>
+              <p class="text-gray-600 text-sm mb-4">행사의 마감시간을 연장하거나 단축합니다. 인증이 필요합니다.</p>
+              
+              <div class="input-row mb-4">
+                <input type="datetime-local" id="newEndTime" class="form-input bg-white">
+              </div>
+
+              <button id="btn-req-edit-code" class="btn btn-primary mb-4 bg-orange-500 hover:bg-orange-600 border-none">
+                시간 변경용 인증 메일 발송
+              </button>
+              
+              <div id="edit-auth-box" class="hidden">
+                <input type="text" id="editCode" class="form-input mb-4 bg-white" placeholder="메일로 받은 6자리 인증번호">
+                <button id="btn-confirm-edit-time" class="btn btn-danger bg-orange-600 hover:bg-orange-700 border-none w-full">
+                  마감시간 최종 변경 적용
+                </button>
+              </div>
             </div>
+
+            <div id="delete-section" class="p-6 border border-red-200 bg-red-50 rounded-xl">
+              <h3 class="text-xl font-bold text-red-600 mb-2">위험 구역 : 행사 삭제</h3>
+              <p class="text-gray-600 text-sm mb-4">출석 데이터를 포함한 모든 정보가 <strong>영구적으로 삭제</strong>됩니다.</p>
+              
+              <button id="btn-req-delete-code" class="btn btn-danger mb-4">삭제용 인증 메일 발송</button>
+              
+              <div id="delete-auth-box" class="hidden">
+                <input type="text" id="deleteCode" class="form-input mb-4 bg-white" placeholder="메일로 받은 6자리 인증번호">
+                <button id="btn-confirm-delete" class="btn btn-danger w-full">최종 삭제 (복구 불가)</button>
+              </div>
+            </div>
+            
           </div>
 
         </div>

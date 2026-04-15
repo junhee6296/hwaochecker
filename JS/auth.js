@@ -1,4 +1,3 @@
-// JS/auth.js
 import { API_BASE_URL, globalState } from './config.js';
 import { loadEventsForDashboard } from './events.js';
 
@@ -35,33 +34,44 @@ export function initAuth() {
     if (!email) return alert('이메일을 입력해주세요.');
     
     btnRequest.textContent = '발송 중...';
-    const res = await fetch(`${API_BASE_URL}/admin/request-code`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email })
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/request-code`, { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify({ email, type: 'login' }) 
     });
-    
-    if (res.ok) {
-      globalState.loggedInEmail = email; // 상태 저장
-      document.getElementById('step-email').classList.add('hidden');
-      document.getElementById('step-code').classList.remove('hidden');
-      startAuthTimer('auth-timer', 180); // 3분 타이머 시작
-    } else {
-      alert((await res.json()).message);
+      if (res.ok) {
+        globalState.loggedInEmail = email; 
+        document.getElementById('step-email').classList.add('hidden');
+        document.getElementById('step-code').classList.remove('hidden');
+        startAuthTimer('auth-timer', 180); 
+      } else {
+        alert((await res.json()).message);
+        btnRequest.textContent = '인증번호 요청';
+      }
+    } catch (e) {
+      alert('서버와 연결할 수 없습니다.');
       btnRequest.textContent = '인증번호 요청';
     }
   });
 
   btnVerify.addEventListener('click', async () => {
     const code = document.getElementById('adminCode').value.trim();
-    const res = await fetch(`${API_BASE_URL}/admin/verify-code`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: globalState.loggedInEmail, code })
-    });
-    
-    if (res.ok) {
-      document.getElementById('login-section').classList.add('hidden');
-      document.getElementById('dashboard-section').classList.remove('hidden');
-      loadEventsForDashboard(); // 로그인 성공 시 행사 목록 로드
-    } else {
-      alert((await res.json()).message);
+    if (!code) return alert('인증번호를 입력해주세요.');
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/verify-code`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: globalState.loggedInEmail, code })
+      });
+      if (res.ok) {
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('dashboard-section').classList.remove('hidden');
+        loadEventsForDashboard(); 
+      } else {
+        alert((await res.json()).message);
+      }
+    } catch (e) {
+      alert('서버 에러');
     }
   });
 }
